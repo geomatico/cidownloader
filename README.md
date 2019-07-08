@@ -2,7 +2,7 @@
 
 Herramienta para descargar datos del servicio ATOM [Inspire de Catastro](http://www.catastro.minhap.es/webinspire/index.html) y convertirlo en [GeoPackage](https://www.geopackage.org/).
 
-Necesita disponer de GDAL >= 2.3.3. 
+Necesita disponer de GDAL >= 2.3.3.
 
 #### Uso
 
@@ -19,16 +19,26 @@ $ cidownloader --help
 
 Usage: cidownloader [OPTIONS]
 
+  Catastro Inspire Downloader.
+
+  Utilidad que permite descargar cartografía del  servicio inspire de la
+  Dirección General de Catastro.
+
+  Genera un fichero GeoPackage.
+
 Options:
-  -p, --provincia INTEGER  Código Gerencia Catastro. Si no se indica descarga
-                           todas las provincias.
-  -m, --municipio INTEGER  Código Municipio Catastro. Si no se indica descarga
-                           todos los municipios.
-  --srs INTEGER            Código EPSG final. Si no se indica, se mantendrá el
-                           de origen.
-  --filename TEXT          Nombre Geopackage
-  -s, --separar_salida     Separar salida a un GeoPackage por Provincia
-  --help                   Show this message and exit.
+  -p, --provincia INTEGER         Código Gerencia Catastro. Si no se indica
+                                  descarga todas las provincias.
+  -m, --municipio INTEGER         Código Municipio Catastro. Si no se indica
+                                  descarga todos los municipios.
+  --srs INTEGER                   Código EPSG final. Si no se indica, se
+                                  mantendrá el de origen.
+  --tipo [all|parcels|buildings|addresses]
+                                  Tipo Cartografía a descargar.  [required]
+  --filename TEXT                 Nombre Geopackage
+  -s, --separar_salida            Separar salida a un GeoPackage por Provincia
+  --version                       Show the version and exit.
+  --help                          Show this message and exit.
 ```
 
 Si se ejecuta sin opciones descarga todos los municipios de España y genera un GeoPackage llamado `buildings.gpkg` de unos 25 Gb.

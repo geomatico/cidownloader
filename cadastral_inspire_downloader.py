@@ -4,10 +4,11 @@ import zipfile
 import shutil
 import click
 
-
-atom_buildings = 'http://www.catastro.minhap.es/INSPIRE/buildings/ES.SDGC.BU.atom.xml'
-atom_parcels = 'http://www.catastro.minhap.es/INSPIRE/CadastralParcels/ES.SDGC.CP.atom.xml'
-atom_addresses = 'http://www.catastro.minhap.es/INSPIRE/Addresses/ES.SDGC.AD.atom.xml'
+atom_urls = {
+    'parcels': 'http://www.catastro.minhap.es/INSPIRE/CadastralParcels/ES.SDGC.CP.atom.xml',
+    'buildings': 'http://www.catastro.minhap.es/INSPIRE/buildings/ES.SDGC.BU.atom.xml',
+    'addresses': 'http://www.catastro.minhap.es/INSPIRE/Addresses/ES.SDGC.AD.atom.xml'
+}
 
 def format_codmun(provincia, municipio):
     return str(provincia).zfill(2) + str(municipio).zfill(3)
@@ -76,15 +77,13 @@ def read_prov_atom(atom_url, codmun=None):
     return urls
 
 
-def read_complete_atom(provincia=None):
+def read_complete_atom(url, provincia=None):
     """
     Lee el atom general de Catastro Inspire que contiene los diferentes
     Atoms para cada provincia.
 
     Devuelve una lista con url a los atoms y el título.
     """
-
-    url = atom_buildings
     response = requests.get(url)
     feed = atoma.parse_atom_bytes(response.content)
 
@@ -103,15 +102,9 @@ def read_complete_atom(provincia=None):
     
     return atoms_provincias
 
-@click.command()
-@click.option('--provincia', '-p', default=None, type=click.INT, help='Código Gerencia Catastro. Si no se indica descarga todas las provincias.')
-@click.option('--municipio', '-m', default=None, type=click.INT, help='Código Municipio Catastro. Si no se indica descarga todos los municipios.')
-@click.option('--srs', default=None, type=click.INT, help='Código EPSG final. Si no se indica, se mantendrá el de origen.')
-@click.option('--filename', default="buildings", help='Nombre Geopackage')
-@click.option('--separar_salida', '-s', flag_value=True, is_flag=True, help='Separar salida a un GeoPackage por Provincia')
-def cli(provincia=None, municipio=None, srs=None, filename="buildings", separar_salida=False):
+def start_download(url_type, provincia=None, municipio=None, srs=None, filename="buildings", separar_salida=False):
 
-    atoms_provincias = read_complete_atom(provincia)
+    atoms_provincias = read_complete_atom(url_type, provincia)
     codmun = format_codmun(provincia, municipio) if municipio is not None else None
 
     geopackage_name = filename
@@ -133,5 +126,31 @@ def cli(provincia=None, municipio=None, srs=None, filename="buildings", separar_
                 geopackage_name = '_'.join([filename, prov_title.replace(' ', '_')])
             download_municipio(url[0], url[1], geopackage_name, to_epsg=srs)
 
-if __name__ == '__main__':
-    cli()
+
+@click.command()
+@click.option('--provincia', '-p', default=None, type=click.INT, help='Código Gerencia Catastro. Si no se indica descarga todas las provincias.')
+@click.option('--municipio', '-m', default=None, type=click.INT, help='Código Municipio Catastro. Si no se indica descarga todos los municipios.')
+@click.option('--srs', default=None, type=click.INT, help='Código EPSG final. Si no se indica, se mantendrá el de origen.')
+@click.option('--tipo', required=True, type=click.Choice(['all', 'parcels', 'buildings', 'addresses']), help='Tipo Cartografía a descargar.')
+@click.option('--filename', default="buildings", help='Nombre Geopackage')
+@click.option('--separar_salida', '-s', flag_value=True, is_flag=True, help='Separar salida a un GeoPackage por Provincia')
+@click.version_option()
+def cli(provincia, municipio, tipo, srs, filename, separar_salida):
+    """Catastro Inspire Downloader.
+    
+    Utilidad que permite descargar cartografía del 
+    servicio inspire de la Dirección General de Catastro.
+    
+    Genera un fichero GeoPackage.
+
+    """
+
+    if tipo == 'all':
+        for key, url in atom_urls.items():
+            print('Comenzando descarga de {}:'.format(key))
+            start_download(url_type=url, provincia=provincia, municipio=municipio, srs=srs, filename=filename, separar_salida=separar_salida)
+    else:
+        url = atom_urls[tipo]
+        print('Comenzando descarga de {}:'.format(tipo))
+        start_download(url_type=url, provincia=provincia, municipio=municipio, srs=srs, filename=filename, separar_salida=separar_salida)
+    

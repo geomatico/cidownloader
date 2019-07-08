@@ -2,12 +2,11 @@ from setuptools import setup
 
 setup(
     name='CatastroInspireDownloader',
-    version='0.1',
+    version='0.1.1',
     py_modules=['cadastral_inspire_downloader'],
     install_requires=[
         'Click==7.0',
         'atoma',
-        'GDAL>=2.3.3',
         'requests==2.22.0',
     ],
 
