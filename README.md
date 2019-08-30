@@ -9,7 +9,7 @@ Herramienta para descargar datos del servicio ATOM [Inspire de Catastro](http://
 Para instalar:
 
 ```bash
-pip install --editable .
+pip install CatastroInspireDownloader
 ```
 
 Para ejecutar:
@@ -27,14 +27,10 @@ Usage: cidownloader [OPTIONS]
   Genera un fichero GeoPackage.
 
 Options:
-  -p, --provincia INTEGER         Código Gerencia Catastro. Si no se indica
-                                  descarga todas las provincias.
-  -m, --municipio INTEGER         Código Municipio Catastro. Si no se indica
-                                  descarga todos los municipios.
-  --srs INTEGER                   Código EPSG final. Si no se indica, se
-                                  mantendrá el de origen.
-  --tipo [all|parcels|buildings|addresses]
-                                  Tipo Cartografía a descargar.  [required]
+  -p, --provincia INTEGER         Código Gerencia Catastro. Si no se indica descarga todas las provincias.
+  -m, --municipio INTEGER         Código Municipio Catastro. Si no se indica descarga todos los municipios.
+  --srs INTEGER                   Código EPSG final. Si no se indica, se mantendrá el de origen.
+  --tipo [all|parcels|buildings|addresses] Tipo Cartografía a descargar. Default: 'all'
   --filename TEXT                 Nombre Geopackage sin la extensión
   -s, --separar_salida            Separar salida a un GeoPackage por Provincia
   --version                       Show the version and exit.
