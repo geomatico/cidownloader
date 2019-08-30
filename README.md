@@ -1,10 +1,10 @@
-## Catastro Inspire Downloader
+# Catastro Inspire Downloader
 
 Herramienta para descargar datos del servicio ATOM [Inspire de Catastro](http://www.catastro.minhap.es/webinspire/index.html) y convertirlo en [GeoPackage](https://www.geopackage.org/).
 
-Necesita disponer de GDAL >= 2.3.3.
+> Necesita disponer de GDAL >= 2.3.3.
 
-#### Uso
+## Usar la CLI
 
 Para instalar:
 
@@ -35,7 +35,7 @@ Options:
                                   mantendrá el de origen.
   --tipo [all|parcels|buildings|addresses]
                                   Tipo Cartografía a descargar.  [required]
-  --filename TEXT                 Nombre Geopackage
+  --filename TEXT                 Nombre Geopackage sin la extensión
   -s, --separar_salida            Separar salida a un GeoPackage por Provincia
   --version                       Show the version and exit.
   --help                          Show this message and exit.
@@ -43,8 +43,13 @@ Options:
 
 Si se ejecuta sin opciones descarga todos los municipios de España y genera un GeoPackage llamado `buildings.gpkg` de unos 25 Gb.
 
+Un ejemplo de uso sería
 
-#### MVT
+```bash
+cidownloader -p 36 -m 62 --srs 25829
+```
+
+## Generar MVTs desde el GeoPackage
 
 Se puede generar un fichero mbtiles de [Mapbox Vector Tiles](https://docs.mapbox.com/vector-tiles/reference/) con las construcciones de catastro:
 
