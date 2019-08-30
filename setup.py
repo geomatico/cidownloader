@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='CatastroInspireDownloader',
-    version='0.1.2',
+    version='0.2.0',
     install_requires=[
         'Click==7.0',
         'atoma',
