@@ -1,8 +1,10 @@
-import atoma, requests, os, subprocess
+import atoma
+import requests
+import os
+import subprocess
 from urllib import request, parse
 import zipfile
 import shutil
-import click
 
 atom_urls = {
     'parcels': 'http://www.catastro.minhap.es/INSPIRE/CadastralParcels/ES.SDGC.CP.atom.xml',
@@ -10,11 +12,14 @@ atom_urls = {
     'addresses': 'http://www.catastro.minhap.es/INSPIRE/Addresses/ES.SDGC.AD.atom.xml'
 }
 
+
 def format_codmun(provincia, municipio):
+    """Obtiene el código de municipio a partir de la provincia y el municipio"""
     return str(provincia).zfill(2) + str(municipio).zfill(3)
 
 
-def parseurl(url):
+def parse_url(url):
+    """Codifica la URL. parse.quote('abc def') -> 'abc%20def'"""
 
     url = parse.urlsplit(url)
     url = list(url)
@@ -23,7 +28,7 @@ def parseurl(url):
     return parsed_url
 
 
-def download_municipio(url, epsg, output_gpkg, to_epsg=None):
+def download_and_process_municipality(url, epsg, output_gpkg, to_epsg=None):
     """
     Descarga un gml de catastro a partir de una url y un epgs.
     Lo convierte a geopackage.
@@ -38,12 +43,13 @@ def download_municipio(url, epsg, output_gpkg, to_epsg=None):
         except:
             pass
         filename, headers = request.urlretrieve(url)
-        with zipfile.ZipFile(os.path.join(filename) , "r") as z:
+        with zipfile.ZipFile(os.path.join(filename), "r") as z:
             z.extractall(path=os.path.join(os.curdir, 'downloads'))
         for gml in os.listdir('downloads'):
             if os.path.splitext(gml)[1] == '.gml':
-                layername = gml.split('.')[5]
-                ogr_cmd = """ogr2ogr -update -append -f GPKG -s_srs EPSG:{} -t_srs EPSG:{} -lco IDENTIFIER={} {} {}""".format(epsg, to_epsg, layername, output_gpkg + '.gpkg', os.path.join('downloads', gml))
+                layer_name = gml.split('.')[5]
+                ogr_cmd = """ogr2ogr -update -append -f GPKG -s_srs EPSG:{} -t_srs EPSG:{} -lco IDENTIFIER={} {} {}""" \
+                    .format(epsg, to_epsg, layer_name, output_gpkg + '.gpkg', os.path.join('downloads', gml))
                 # print ("\n Executing: ", ogr_cmd)
                 subprocess.run(ogr_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception as e:
@@ -52,7 +58,7 @@ def download_municipio(url, epsg, output_gpkg, to_epsg=None):
         shutil.rmtree('downloads')
 
 
-def read_prov_atom(atom_url, codmun=None):
+def get_municipality_atoms_url(atom_url, codmun=None):
     """
     Lee el atom específico para cada parroquia. 
     
@@ -67,7 +73,7 @@ def read_prov_atom(atom_url, codmun=None):
 
     urls = []
     for entry in feed.entries:
-        url = parseurl(entry.links[0].href)
+        url = parse_url(entry.links[0].href)
         epsg = entry.categories[0].term.split('/')[-1]
         codmun_atom = os.path.basename(url).split('.')[4]
 
@@ -77,7 +83,7 @@ def read_prov_atom(atom_url, codmun=None):
     return urls
 
 
-def read_complete_atom(url, provincia=None):
+def get_provinces_atoms_url(url, province_code=None):
     """
     Lee el atom general de Catastro Inspire que contiene los diferentes
     Atoms para cada provincia.
@@ -90,21 +96,21 @@ def read_complete_atom(url, provincia=None):
     atoms_provincias = []
 
     for entry in feed.entries:
-        if provincia != None:
-            if os.path.basename(entry.links[0].href).split('.')[3] == 'atom_{}'.format(str(provincia).zfill(2)):
-                url = parseurl(entry.links[0].href)
+        if province_code is not None:
+            if os.path.basename(entry.links[0].href).split('.')[3] == 'atom_{}'.format(str(province_code).zfill(2)):
+                url = parse_url(entry.links[0].href)
                 title = entry.title.value
                 atoms_provincias.append((url, title))
         else:
-            url = parseurl(entry.links[0].href)
+            url = parse_url(entry.links[0].href)
             title = entry.title.value
             atoms_provincias.append((url, title))
-    
+
     return atoms_provincias
 
-def start_download(url_type, provincia=None, municipio=None, srs=None, filename="buildings", separar_salida=False):
 
-    atoms_provincias = read_complete_atom(url_type, provincia)
+def download(data_to_download, provincia=None, municipio=None, srs=None, filename="buildings", separar_salida=False):
+    atoms_provincias = get_provinces_atoms_url(data_to_download, provincia)
     codmun = format_codmun(provincia, municipio) if municipio is not None else None
 
     geopackage_name = filename
@@ -115,7 +121,7 @@ def start_download(url_type, provincia=None, municipio=None, srs=None, filename=
         prov_title = atom[1]
         prov_url = atom[0]
         print(prov_title)
-        urls = read_prov_atom(prov_url, codmun=codmun)
+        urls = get_municipality_atoms_url(prov_url, codmun=codmun)
 
         current_mun = 0
         total_mun = len(urls)
@@ -124,33 +130,4 @@ def start_download(url_type, provincia=None, municipio=None, srs=None, filename=
             print('[{}/{}][{}/{}] Downloading {}'.format(current_prov, total_prov, current_mun, total_mun, url[0]))
             if separar_salida:
                 geopackage_name = '_'.join([filename, prov_title.replace(' ', '_')])
-            download_municipio(url[0], url[1], geopackage_name, to_epsg=srs)
-
-
-@click.command()
-@click.option('--provincia', '-p', default=None, type=click.INT, help='Código Gerencia Catastro. Si no se indica descarga todas las provincias.')
-@click.option('--municipio', '-m', default=None, type=click.INT, help='Código Municipio Catastro. Si no se indica descarga todos los municipios.')
-@click.option('--srs', default=None, type=click.INT, help='Código EPSG final. Si no se indica, se mantendrá el de origen.')
-@click.option('--tipo', required=True, type=click.Choice(['all', 'parcels', 'buildings', 'addresses']), help='Tipo Cartografía a descargar.')
-@click.option('--filename', default="buildings", help='Nombre Geopackage')
-@click.option('--separar_salida', '-s', flag_value=True, is_flag=True, help='Separar salida a un GeoPackage por Provincia')
-@click.version_option()
-def cli(provincia, municipio, tipo, srs, filename, separar_salida):
-    """Catastro Inspire Downloader.
-    
-    Utilidad que permite descargar cartografía del 
-    servicio inspire de la Dirección General de Catastro.
-    
-    Genera un fichero GeoPackage.
-
-    """
-
-    if tipo == 'all':
-        for key, url in atom_urls.items():
-            print('Comenzando descarga de {}:'.format(key))
-            start_download(url_type=url, provincia=provincia, municipio=municipio, srs=srs, filename=filename, separar_salida=separar_salida)
-    else:
-        url = atom_urls[tipo]
-        print('Comenzando descarga de {}:'.format(tipo))
-        start_download(url_type=url, provincia=provincia, municipio=municipio, srs=srs, filename=filename, separar_salida=separar_salida)
-    
+            download_and_process_municipality(url[0], url[1], geopackage_name, to_epsg=srs)
