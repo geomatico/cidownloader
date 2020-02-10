@@ -2,7 +2,7 @@
 
 Herramienta para descargar datos del servicio ATOM [Inspire de Catastro](http://www.catastro.minhap.es/webinspire/index.html) y convertirlo en [GeoPackage](https://www.geopackage.org/).
 
-> Necesita disponer de GDAL >= 2.3.3.
+> Necesita disponer de GDAL >= 2.3.3. y Python 3
 
 ## Usar la CLI
 
