@@ -9,7 +9,7 @@ setup(
     install_requires=[
         'Click==7.0',
         'atoma',
-        'requests==2.31.0',
+        'requests==2.32.2',
     ],
     author="Francisco P. Sampayo",
     author_email="francisco.perez@geomati.co",
