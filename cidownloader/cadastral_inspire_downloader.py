@@ -6,10 +6,12 @@ from urllib import request, parse
 import zipfile
 import shutil
 
+base_url = 'https://www.catastro.hacienda.gob.es'
+
 atom_urls = {
-    'parcels': 'http://www.catastro.minhap.es/INSPIRE/CadastralParcels/ES.SDGC.CP.atom.xml',
-    'buildings': 'http://www.catastro.minhap.es/INSPIRE/buildings/ES.SDGC.BU.atom.xml',
-    'addresses': 'http://www.catastro.minhap.es/INSPIRE/Addresses/ES.SDGC.AD.atom.xml'
+    'parcels': f'{base_url}/INSPIRE/CadastralParcels/ES.SDGC.CP.atom.xml',
+    'buildings': f'{base_url}/INSPIRE/buildings/ES.SDGC.BU.atom.xml',
+    'addresses': f'{base_url}/INSPIRE/Addresses/ES.SDGC.AD.atom.xml'
 }
 
 
