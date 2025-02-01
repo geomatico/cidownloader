@@ -7,9 +7,9 @@ import zipfile
 import shutil
 
 atom_urls = {
-    'parcels': 'http://www.catastro.minhap.es/INSPIRE/CadastralParcels/ES.SDGC.CP.atom.xml',
-    'buildings': 'http://www.catastro.minhap.es/INSPIRE/buildings/ES.SDGC.BU.atom.xml',
-    'addresses': 'http://www.catastro.minhap.es/INSPIRE/Addresses/ES.SDGC.AD.atom.xml'
+    'parcels': 'https://www.catastro.hacienda.gob.es/INSPIRE/CadastralParcels/ES.SDGC.CP.atom.xml',
+    'buildings': 'https://www.catastro.hacienda.gob.es/INSPIRE/buildings/ES.SDGC.BU.atom.xml',
+    'addresses': 'https://www.catastro.hacienda.gob.es/INSPIRE/Addresses/ES.SDGC.AD.atom.xml'
 }
 
 
