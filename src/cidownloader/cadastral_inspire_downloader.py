@@ -131,3 +131,6 @@ def download(data_to_download, provincia=None, municipio=None, srs=None, filenam
             if separar_salida:
                 geopackage_name = '_'.join([filename, prov_title.replace(' ', '_')])
             download_and_process_municipality(url[0], url[1], geopackage_name, to_epsg=srs)
+
+if __name__ == "__main__":
+    download(data_to_download=atom_urls['buildings'], provincia=36, municipio=31)
