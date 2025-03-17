@@ -52,3 +52,18 @@ Se puede generar un fichero mbtiles de [Mapbox Vector Tiles](https://docs.mapbox
 ```bash
 ogr2ogr -f "MVT" -dsco MINZOOM=14 -dsco MAXZOOM=16 -lco "NAME=buildingparts" -sql "SELECT localID AS id, substr(localid, 0, 15) as parcel, numberOfFloorsAboveGround AS floors, geom FROM BuildingPart WHERE numberOfFloorsAboveGround > 0" buildings.mbtiles buildings.gpkg
 ```
+
+
+## Build
+
+```bash
+python3 -m pip install --upgrade build
+python3 -m build
+```
+
+## Publish
+
+```bash
+python3 -m pip install --upgrade twine
+python3 -m twine upload dist/*
+```
