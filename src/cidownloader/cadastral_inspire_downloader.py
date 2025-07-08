@@ -13,6 +13,11 @@ atom_urls = {
 }
 
 
+class ProcessMunicipalityException(Exception):
+    pass
+
+
+
 def format_codmun(provincia, municipio):
     """Obtiene el código de municipio a partir de la provincia y el municipio"""
     return str(provincia).zfill(2) + str(municipio).zfill(3)
