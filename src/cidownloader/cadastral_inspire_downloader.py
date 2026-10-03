@@ -1,6 +1,7 @@
 import atoma
 import requests
 import os
+import re
 import subprocess
 from urllib import request, parse
 import zipfile
@@ -11,6 +12,9 @@ atom_urls = {
     'buildings': 'https://www.catastro.hacienda.gob.es/INSPIRE/buildings/ES.SDGC.BU.atom.xml',
     'addresses': 'https://www.catastro.hacienda.gob.es/INSPIRE/Addresses/ES.SDGC.AD.atom.xml'
 }
+
+province_atom_re = re.compile(r'atom_(\d{2})\.xml$')
+municipality_atom_re = re.compile(r'ES\.SDGC\.\w+\.(\d{5})\.zip$')
 
 
 class ProcessMunicipalityException(Exception):
@@ -79,8 +83,11 @@ def get_municipality_atoms_url(atom_url, codmun=None):
     urls = []
     for entry in feed.entries:
         url = parse_url(entry.links[0].href)
+        match = municipality_atom_re.search(os.path.basename(url))
+        if match is None:
+            continue
         epsg = entry.categories[0].term.split('/')[-1]
-        codmun_atom = os.path.basename(url).split('.')[4]
+        codmun_atom = match.group(1)
 
         if codmun is None or codmun == codmun_atom:
             urls.append((url, epsg))
@@ -94,19 +101,21 @@ def get_provinces_atoms_url(url, province_code=None):
     Atoms para cada provincia.
 
     Devuelve una lista con url a los atoms y el título.
+
+    Se ignoran las entradas de las comunidades forales (Araba, Bizkaia,
+    Gipuzkoa y Navarra), que no siguen el formato del resto de provincias.
     """
     response = requests.get(url)
     feed = atoma.parse_atom_bytes(response.content)
 
     atoms_provincias = []
+    wanted = str(province_code).zfill(2) if province_code is not None else None
 
     for entry in feed.entries:
-        if province_code is not None:
-            if os.path.basename(entry.links[0].href).split('.')[3] == 'atom_{}'.format(str(province_code).zfill(2)):
-                url = parse_url(entry.links[0].href)
-                title = entry.title.value
-                atoms_provincias.append((url, title))
-        else:
+        match = province_atom_re.search(os.path.basename(entry.links[0].href))
+        if match is None:
+            continue
+        if wanted is None or match.group(1) == wanted:
             url = parse_url(entry.links[0].href)
             title = entry.title.value
             atoms_provincias.append((url, title))
@@ -116,6 +125,9 @@ def get_provinces_atoms_url(url, province_code=None):
 
 def download(data_to_download, provincia=None, municipio=None, srs=None, filename="buildings", separar_salida=False):
     atoms_provincias = get_provinces_atoms_url(data_to_download, provincia)
+    if provincia is not None and not atoms_provincias:
+        print('La provincia {} no está disponible en este servicio.'.format(str(provincia).zfill(2)))
+        return
     codmun = format_codmun(provincia, municipio) if municipio is not None else None
 
     geopackage_name = filename
