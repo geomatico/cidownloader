@@ -37,7 +37,7 @@ def parse_url(url):
     return parsed_url
 
 
-def download_and_process_municipality(url, epsg, output_gpkg, to_epsg=None):
+def download_and_process_municipality(url, epsg, output_gpkg, to_epsg=None, keep_downloaded_data=False):
     """
     Descarga un gml de catastro a partir de una url y un epgs.
     Lo convierte a geopackage.
@@ -46,25 +46,38 @@ def download_and_process_municipality(url, epsg, output_gpkg, to_epsg=None):
     if not to_epsg:
         to_epsg = epsg
 
+    DOWNLOADS_PATH = os.path.join(os.curdir, 'downloads')
+    TEMP_PATH = os.path.join(DOWNLOADS_PATH, 'temp')
+    GPKG_FILENAME = output_gpkg
+
     try:
         try:
-            os.makedirs('downloads')
+            os.makedirs(DOWNLOADS_PATH)
         except:
             pass
-        filename, headers = request.urlretrieve(url)
-        with zipfile.ZipFile(os.path.join(filename), "r") as z:
-            z.extractall(path=os.path.join(os.curdir, 'downloads'))
-        for gml in os.listdir('downloads'):
+        zip_filename = os.path.basename(url)
+        zip_path = os.path.join(DOWNLOADS_PATH, zip_filename)
+        if not zip_filename in os.listdir(DOWNLOADS_PATH):
+            filename, headers = request.urlretrieve(url, os.path.join(DOWNLOADS_PATH, zip_filename))
+        else:
+            print(f'{zip_filename} ya descargado. Se usa el local.')
+        with zipfile.ZipFile(zip_path, "r") as z:
+            os.makedirs(TEMP_PATH)
+            z.extractall(path=TEMP_PATH)
+        for gml in os.listdir(TEMP_PATH):
             if os.path.splitext(gml)[1] == '.gml':
                 layer_name = gml.split('.')[5]
                 ogr_cmd = """ogr2ogr -update -append -f GPKG -s_srs EPSG:{} -t_srs EPSG:{} -lco IDENTIFIER={} {} {}""" \
-                    .format(epsg, to_epsg, layer_name, output_gpkg + '.gpkg', os.path.join('downloads', gml))
+                    .format(epsg, to_epsg, layer_name, GPKG_FILENAME, os.path.join(TEMP_PATH, gml))
                 # print ("\n Executing: ", ogr_cmd)
                 subprocess.run(ogr_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception as e:
         print("Error: {}".format(str(e)))
     finally:
-        shutil.rmtree('downloads')
+        if not keep_downloaded_data:
+            shutil.rmtree(DOWNLOADS_PATH)
+        else:
+            shutil.rmtree(TEMP_PATH)
 
 
 def get_municipality_atoms_url(atom_url, codmun=None):
@@ -123,7 +136,8 @@ def get_provinces_atoms_url(url, province_code=None):
     return atoms_provincias
 
 
-def download(data_to_download, provincia=None, municipio=None, srs=None, filename="buildings", separar_salida=False):
+def download(data_to_download, provincia=None, municipio=None, srs=None, filename="buildings", separar_salida=False,
+             keep_downloaded_data=False):
     atoms_provincias = get_provinces_atoms_url(data_to_download, provincia)
     if provincia is not None and not atoms_provincias:
         print('La provincia {} no está disponible en este servicio.'.format(str(provincia).zfill(2)))
@@ -138,6 +152,16 @@ def download(data_to_download, provincia=None, municipio=None, srs=None, filenam
         prov_title = atom[1]
         prov_url = atom[0]
         print(prov_title)
+        cod_province = prov_title.split(' ')[2]
+        if separar_salida:
+            geopackage_name = '_'.join([filename, cod_province])
+
+        gpkg_with_extension = geopackage_name + '.gpkg'
+
+        if gpkg_with_extension in os.listdir(os.curdir):
+            print(f'Geopackge de salida {gpkg_with_extension} ya existe. Se omite.')
+            continue
+
         urls = get_municipality_atoms_url(prov_url, codmun=codmun)
 
         current_mun = 0
@@ -145,9 +169,8 @@ def download(data_to_download, provincia=None, municipio=None, srs=None, filenam
         for url in urls:
             current_mun += 1
             print('[{}/{}][{}/{}] Downloading {}'.format(current_prov, total_prov, current_mun, total_mun, url[0]))
-            if separar_salida:
-                geopackage_name = '_'.join([filename, prov_title.replace(' ', '_')])
-            download_and_process_municipality(url[0], url[1], geopackage_name, to_epsg=srs)
+
+            download_and_process_municipality(url[0], url[1], gpkg_with_extension, to_epsg=srs, keep_downloaded_data=keep_downloaded_data)
 
 if __name__ == "__main__":
     download(data_to_download=atom_urls['buildings'], provincia=36, municipio=31)

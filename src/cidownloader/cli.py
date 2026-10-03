@@ -19,8 +19,10 @@ CLI para el uso del cidownloader
 @click.option('--filename', default="buildings", help='Nombre Geopackage')
 @click.option('--separar_salida', '-s', flag_value=True, is_flag=True, help='Separar salida a un '
                                                                             'GeoPackage por Provincia')
+@click.option('--keep_downloaded_data', '-k', flag_value=True, is_flag=True, help='Mantiene los ficheros '
+                                                                            'descargados')
 @click.version_option()
-def cli(provincia, municipio, tipo, srs, filename, separar_salida):
+def cli(provincia, municipio, tipo, srs, filename, separar_salida, keep_downloaded_data):
     """Catastro Inspire Downloader.
 
     Utilidad que permite descargar cartografía del
@@ -34,9 +36,9 @@ def cli(provincia, municipio, tipo, srs, filename, separar_salida):
         for key, url in atom_urls.items():
             print('Comenzando descarga de {}:'.format(key))
             download(data_to_download=url, provincia=provincia, municipio=municipio, srs=srs, filename=filename,
-                     separar_salida=separar_salida)
+                     separar_salida=separar_salida, keep_downloaded_data=keep_downloaded_data)
     else:
         url = atom_urls[tipo]
         print('Comenzando descarga de {}:'.format(tipo))
         download(data_to_download=url, provincia=provincia, municipio=municipio, srs=srs, filename=filename,
-                 separar_salida=separar_salida)
+                 separar_salida=separar_salida, keep_downloaded_data=keep_downloaded_data)
